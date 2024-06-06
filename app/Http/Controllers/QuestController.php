@@ -5,15 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Quest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Session;
 
 class QuestController extends Controller
 {
     /**
      * Affiche la liste de toutes les quêtes.
      */
-    public function index()
+    public function index($token)
     {
-        $quests = Quest::with('session')->get();
+        $session = Session::where('token', $token)->firstOrFail();
+        $quests = $session->quests;
         return response()->json($quests);
     }
 
@@ -32,21 +34,18 @@ class QuestController extends Controller
     /**
      * Crée une nouvelle quête.
      */
-    public function store(Request $request)
+    public function store(Request $request, $token)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'is_finished' => 'required|boolean',
-            'session_id' => 'required|exists:sessions,session_id'
+        $session = Session::where('token', $token)->firstOrFail();
+
+        $quest = new Quest([
+            'session_id' => $session->session_id,
+            'title' => $request->title,
+            'description' => $request->description,
         ]);
+        $quest->save();
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
-
-        $quest = Quest::create($request->all());
-        return response()->json($quest, 201);
+        return response()->json(['message' => 'Quest added successfully!', 'quest' => $quest]);
     }
 
     /**
@@ -77,13 +76,12 @@ class QuestController extends Controller
     /**
      * Supprime une quête.
      */
+
     public function destroy($id)
     {
-        $quest = Quest::find($id);
-        if (!$quest) {
-            return response()->json(['message' => 'Quest not found'], 404);
-        }
+        $quest = Quest::findOrFail($id);
         $quest->delete();
-        return response()->json(['message' => 'Quest deleted successfully']);
+
+        return response()->json(['message' => 'Quest removed successfully!']);
     }
 }

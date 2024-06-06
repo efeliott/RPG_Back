@@ -52,8 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('shops/{shop}/items/{item}', [ShopController::class, 'removeItem']);
 
     // Routes pour les quêtes
-    Route::post('quests/{quest}/complete', [QuestController::class, 'complete']);
-    Route::get('quests/{quest}/players', [QuestController::class, 'players']);
+    Route::post('session/{token}/quests', [QuestController::class, 'store']);
+    Route::delete('quests/{id}', [QuestController::class, 'destroy']);
+    Route::get('session/{token}/quests', [QuestController::class, 'index']);
 
     // Routes pour les invitations et les sessions
     Route::post('/sessions/{sessionToken}/invite', [InvitationController::class, 'invite']);
@@ -74,13 +75,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/sessions/{sessionToken}/players', [PlayerController::class, 'store']);
     Route::put('/players/{id}', [PlayerController::class, 'update']);
     Route::delete('/players/{id}', [PlayerController::class, 'destroy']);
-
-    Route::get('sessions/{token}', [SessionController::class, 'showByToken']);
-    Route::post('sessions/{token}/players', [PlayerController::class, 'store']);
-    Route::delete('players/{id}', [PlayerController::class, 'destroy']);
-    Route::post('sessions/{token}/quests', [QuestController::class, 'store']);
-    Route::delete('quests/{id}', [QuestController::class, 'destroy']);
-    Route::post('sessions/{token}/shop-items', [ShopController::class, 'store']);
-    Route::delete('shop-items/{id}', [ShopController::class, 'destroy']);
-    Route::post('sessions/{token}/wallets', [WalletController::class, 'update']);
 });

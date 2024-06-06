@@ -14,9 +14,9 @@ class CreateQuestsTable extends Migration
             $table->id('quest_id');
             $table->string('title');
             $table->text('description');
-            $table->boolean('is_finished');
+            $table->boolean('is_finished')->default(false);
             $table->unsignedBigInteger('session_id');
-            $table->foreign('session_id')->references('session_id')->on('sessions');
+            $table->foreign('session_id')->references('session_id')->on('sessions')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -26,4 +26,3 @@ class CreateQuestsTable extends Migration
         Schema::dropIfExists('quests');
     }
 }
-

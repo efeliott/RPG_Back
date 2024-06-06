@@ -31,4 +31,9 @@ class Session extends Model
     {
         return $this->belongsToMany(User::class, 'session_user', 'session_id', 'user_id');
     }
+
+    public function quests()
+    {
+        return $this->hasMany(Quest::class, 'session_id', 'session_id');
+    }
 }

@@ -10,6 +10,13 @@ class Quest extends Model
     use HasFactory;
 
     /**
+     * La clé primaire associée au modèle.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'quest_id';
+
+    /**
      * Le nom de la table associée au modèle.
      *
      * @var string
