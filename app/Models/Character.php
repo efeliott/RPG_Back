@@ -24,7 +24,7 @@ class Character extends Model
     protected $fillable = [
         'name',
         'class',
-        'abilities' // Supposé être stocké comme JSON ou texte.
+        'abilities'
     ];
 
     /**

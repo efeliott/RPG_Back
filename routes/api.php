@@ -75,4 +75,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/sessions/{sessionToken}/players', [PlayerController::class, 'store']);
     Route::put('/players/{id}', [PlayerController::class, 'update']);
     Route::delete('/players/{id}', [PlayerController::class, 'destroy']);
+
+    // Routes pour les characters
+    Route::get('/characters', [CharacterController::class, 'index']);
+    Route::post('/characters', [CharacterController::class, 'store']);
 });

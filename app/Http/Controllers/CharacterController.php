@@ -37,7 +37,7 @@ class CharacterController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'class' => 'required|string|max:255',
-            'abilities' => 'required' // Assurez-vous que c'est une chaîne JSON valide si stocké comme JSON.
+            'abilities' => 'required'
         ]);
 
         if ($validator->fails()) {
