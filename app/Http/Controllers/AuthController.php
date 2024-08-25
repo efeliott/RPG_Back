@@ -40,38 +40,47 @@ class AuthController extends Controller
     // Méthode de connexion
     public function login(Request $request)
     {
+        // Validation des entrées
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
-
+    
+        // Rechercher l'utilisateur par email
         $user = User::where('email', $request->email)->first();
-
+    
+        // Vérification des informations de connexion
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
-
+    
+        // Générer un token pour l'utilisateur
         $token = $user->createToken('auth_token')->plainTextToken;
-
+    
+        // Retourner la réponse avec le token d'authentification
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user_id' => $user->id,  // Assurez-vous que l'ID de l'utilisateur est renvoyé
+            'user_id' => $user->id,
         ]);
     }
     
-
+    
     // Méthode de déconnexion
     public function logout(Request $request)
     {
-        // Révoquer tous les tokens de l'utilisateur
-        $request->user()->tokens()->delete();
-
+        // Récupérer le token de l'utilisateur
+        $token = $request->user()->currentAccessToken();
+    
+        // Révoquer le token
+        $token->delete();
+    
         return response()->json([
-            'message' => 'Logout successful!',
-        ], 200);
+            'message' => 'Logout successful!'
+        ]);
     }
-
+    
+    // Méthode pour récupérer l'utilisateur connecté
     public function store(Request $request)
     {
         // Valider les données de la requête

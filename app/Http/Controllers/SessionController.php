@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use Illuminate\Support\Str;
+use App\Models\Shop;
+use App\Models\Wallet;
 
 class SessionController extends Controller
 {
@@ -41,6 +43,13 @@ class SessionController extends Controller
         ]);
 
         $session->save();
+
+        // Crée un shop pour cette session
+        $shop = new Shop([
+            'session_id' => $session->session_id,
+        ]);
+
+        $shop->save();
 
         return response()->json([
             'message' => 'Session created successfully!',
@@ -130,14 +139,23 @@ class SessionController extends Controller
                 $user = Auth::user();
                 Log::info('Authenticated user:', ['user' => $user]);
 
+                // Ajouter l'utilisateur à la session
                 $session->users()->attach($user->id, ['created_at' => now(), 'updated_at' => now()]);
+
+                // Créer un wallet avec un montant initial de 0 pour l'utilisateur dans cette session
+                $wallet = Wallet::create([
+                    'user_id' => $user->user_id,
+                    'session_id' => $session->session_id,
+                    'balance' => 0
+                ]);
+
                 $invitation->accepted = true;
                 $invitation->save();
 
-                Log::info('User joined session successfully');
+                Log::info('User joined session and wallet created successfully');
                 return response()->json([
                     'message' => 'You have joined the session!',
-                    'session_id' => $session->session_id,
+                    'session_id' => $session->id,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
@@ -157,9 +175,10 @@ class SessionController extends Controller
     public function getCreatedSessions()
     {
         $user = Auth::user();
-        $sessions = Session::where('game_master_id', $user->id)->get(['title', 'description', 'token']);
+        $sessions = Session::where('game_master_id', $user->id)->get(['id', 'title', 'description', 'token']);
         return response()->json($sessions);
     }
+
 
     /**
      * Get the sessions the authenticated user is invited to.

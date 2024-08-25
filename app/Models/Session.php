@@ -23,7 +23,7 @@ class Session extends Model
 
     public function invitations()
     {
-        return $this->hasMany(Invitation::class, 'session_id',)
+        return $this->hasMany(Invitation::class, 'session_id', 'session_id')
                     ->withTimestamps('created_at', 'updated_at');
     }
 
@@ -35,5 +35,10 @@ class Session extends Model
     public function quests()
     {
         return $this->hasMany(Quest::class, 'session_id', 'session_id');
+    }
+
+    public function shopItems()
+    {
+        return $this->hasMany(ShopItem::class, 'session_id', 'session_id');
     }
 }

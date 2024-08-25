@@ -36,16 +36,30 @@ class QuestController extends Controller
      */
     public function store(Request $request, $token)
     {
+        // Récupérer la session à partir du token
         $session = Session::where('token', $token)->firstOrFail();
 
+        // Valider les données de la requête
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'reward' => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        // Créer et sauvegarder la nouvelle quête
         $quest = new Quest([
-            'session_id' => $session->session_id,
+            'session_id' => $session->session_id, // Assurez-vous d'utiliser l'ID de la session récupérée
             'title' => $request->title,
             'description' => $request->description,
+            'reward' => $request->reward,
         ]);
         $quest->save();
 
-        return response()->json(['message' => 'Quest added successfully!', 'quest' => $quest]);
+        return response()->json(['message' => 'Quest added successfully!', 'quest' => $quest], 201);
     }
 
     /**
@@ -58,25 +72,29 @@ class QuestController extends Controller
             return response()->json(['message' => 'Quest not found'], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'title' => 'string|max:255',
-            'description' => 'string',
-            'is_finished' => 'boolean',
-            'session_id' => 'exists:sessions,session_id'
-        ]);
+        $quest->update($request->all());
+        return response()->json($quest);
+    }
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+    /**
+     * Met à jour le statut d'une quête.
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $quest = Quest::find($id);
+        if (!$quest) {
+            return response()->json(['message' => 'Quest not found'], 404);
         }
 
-        $quest->update($request->all());
+        $quest->is_finished = $request->is_finished;
+        $quest->save();
+
         return response()->json($quest);
     }
 
     /**
      * Supprime une quête.
      */
-
     public function destroy($id)
     {
         $quest = Quest::findOrFail($id);

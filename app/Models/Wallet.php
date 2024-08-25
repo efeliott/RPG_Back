@@ -2,19 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Wallet extends Model
 {
-    protected $table = 'wallets';
+    use HasFactory;
 
     protected $fillable = [
-        'player_id',
-        'balance',
+        'user_id', 'session_id', 'balance'
     ];
 
-    public function player()
+    public function user()
     {
-        return $this->belongsTo(Player::class);
+        return $this->belongsTo(User::class);
+    }
+
+    public function session()
+    {
+        return $this->belongsTo(Session::class);
     }
 }
