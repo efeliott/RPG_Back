@@ -61,7 +61,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/sessions/{sessionToken}/invite', [InvitationController::class, 'invite']);
     Route::post('/sessions/join', [SessionController::class, 'joinSession']);
     Route::get('/session/{sessionToken}', [SessionController::class, 'show']);
-    Route::get('/user-sessions', [UserController::class, 'getCreatedSessions']);
+    Route::get('/sessions/created', [UserController::class, 'getCreatedSessions']);
 
     // Routes pour les profils
     Route::get('/profile', [UserController::class, 'showProfile']);
