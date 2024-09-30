@@ -20,6 +20,10 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/users', [UserController::class, 'store']);
 
+//Route::get('/sessions/user', [SessionController::class, 'getUserSessions']);
+Route::get('/sessions/user', [SessionController::class, 'getUserSessions'])->middleware('auth:sanctum');
+
+
 // Routes nécessitant l'authentification
 Route::middleware(['auth:sanctum'])->group(function () {
     
@@ -61,7 +65,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/sessions/{sessionToken}/invite', [InvitationController::class, 'invite']);
     Route::post('/sessions/join', [SessionController::class, 'joinSession']);
     Route::get('/session/{sessionToken}', [SessionController::class, 'show']);
-    Route::get('/sessions/created', [UserController::class, 'getCreatedSessions']);
+    Route::get('/sessions/user', [SessionController::class, 'getUserSessions']);
 
     // Routes pour les profils
     Route::get('/profile', [UserController::class, 'showProfile']);

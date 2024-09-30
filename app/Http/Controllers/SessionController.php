@@ -168,25 +168,25 @@ class SessionController extends Controller
             return response()->json(['message' => 'Internal Server Error'], 500);
         }
     }
-
+    
     /**
-     * Get the sessions created by the authenticated user.
+     * Get the sessions of the user.
      */
-    public function getCreatedSessions()
+    public function getUserSessions()
     {
         $user = Auth::user();
-        $sessions = Session::where('game_master_id', $user->id)->get(['id', 'title', 'description', 'token']);
-        return response()->json($sessions);
-    }
-
-
-    /**
-     * Get the sessions the authenticated user is invited to.
-     */
-    public function getInvitedSessions()
-    {
-        $user = Auth::user();
-        $sessions = $user->sessions()->where('game_master_id', '!=', $user->id)->get(['title', 'description', 'token']);
-        return response()->json($sessions);
+    
+        // Récupérer les sessions créées par l'utilisateur en tant que game master
+        $gameMasterSessions = Session::where('game_master_id', $user->id)->get();
+    
+        // Récupérer les sessions où l'utilisateur a été invité
+        $invitedSessions = Session::whereHas('users', function ($query) use ($user) {
+            $query->where('users.id', $user->id);
+        })->get();
+    
+        return response()->json([
+            'game_master_sessions' => $gameMasterSessions,
+            'invited_sessions' => $invitedSessions
+        ]);
     }
 }
