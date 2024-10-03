@@ -9,6 +9,8 @@ class Shop extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'shop_id';
+
     /**
      * Le nom de la table associée au modèle.
      *

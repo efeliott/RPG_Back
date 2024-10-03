@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Support\Str;
 use App\Models\Shop;
 use App\Models\Wallet;
+use App\Models\ShopItem;
 
 class SessionController extends Controller
 {
@@ -103,16 +104,41 @@ class SessionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($token)
     {
-        $session = Session::find($id);
-        if (!$session) {
-            return response()->json(['message' => 'Session not found'], 404);
+        try {
+            // Trouve la session avec le token
+            $session = Session::where('token', $token)->first();
+    
+            if (!$session) {
+                return response()->json(['message' => 'Session introuvable.'], 404);
+            }
+    
+            // Supprime d'abord les invitations associées à la session
+            Invitation::where('session_id', $session->session_id)->delete();
+    
+            // Charger les magasins liés à la session
+            $shops = Shop::where('session_id', $session->session_id)->get();
+    
+            foreach ($shops as $shop) {
+                // Supprime d'abord les enregistrements de la table shopitems
+                ShopItem::where('shop_id', $shop->shop_id)->delete();
+    
+                // Supprime ensuite le magasin
+                $shop->delete();
+            }
+    
+            // Supprime la session elle-même
+            $session->delete();
+    
+            return response()->json(['message' => 'Session supprimée avec succès.'], 200);
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la suppression de la session : ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la suppression de la session.'], 500);
         }
-
-        $session->delete();
-        return response()->json(['message' => 'Session deleted']);
     }
+    
+    
 
     /**
      * Rejoindre une session

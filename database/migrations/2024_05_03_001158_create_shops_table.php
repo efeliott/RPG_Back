@@ -13,7 +13,10 @@ class CreateShopsTable extends Migration
         Schema::create('shops', function (Blueprint $table) {
             $table->id('shop_id');
             $table->unsignedBigInteger('session_id');
-            $table->foreign('session_id')->references('session_id')->on('sessions');
+            $table->foreign('session_id')
+                    ->references('session_id')
+                    ->on('sessions')
+                    ->onDelete('cascade');
             $table->timestamps();
         });
     }

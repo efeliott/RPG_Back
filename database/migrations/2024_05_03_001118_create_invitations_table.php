@@ -17,7 +17,9 @@ class CreateInvitationsTable extends Migration
     {
         Schema::create('invitations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('session_id')->constrained('sessions', 'session_id');  // Référence la colonne session_id
+            $table->foreignId('session_id')
+                    ->constrained('sessions', 'session_id')  // Référence la colonne session_id
+                    ->onDelete('cascade');
             $table->string('email');
             $table->string('token');  // Token d'invitation
             $table->boolean('accepted')->default(false);

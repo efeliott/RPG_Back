@@ -66,6 +66,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/sessions/join', [SessionController::class, 'joinSession']);
     Route::get('/session/{sessionToken}', [SessionController::class, 'show']);
     Route::get('/sessions/user', [SessionController::class, 'getUserSessions']);
+    Route::delete('/sessions/{sessionToken}', [SessionController::class, 'destroy']);
 
     // Routes pour les profils
     Route::get('/profile', [UserController::class, 'showProfile']);

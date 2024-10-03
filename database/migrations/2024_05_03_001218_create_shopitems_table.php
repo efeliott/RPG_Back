@@ -15,8 +15,13 @@ class CreateShopItemsTable extends Migration
             $table->unsignedBigInteger('item_id');
             $table->decimal('price', 10, 2);
             $table->primary(['shop_id', 'item_id']);
-            $table->foreign('shop_id')->references('shop_id')->on('shops');
-            $table->foreign('item_id')->references('item_id')->on('items');
+            $table->foreign('shop_id')
+                    ->references('shop_id')
+                    ->on('shops')
+                    ->onDelete('cascade');
+            $table->foreign('item_id')
+                    ->references('item_id')
+                    ->on('items');
             $table->timestamps();
         });
     }

@@ -41,4 +41,9 @@ class Session extends Model
     {
         return $this->hasMany(ShopItem::class, 'session_id', 'session_id');
     }
+
+    public function shops()
+    {
+        return $this->hasMany(Shop::class, 'session_id', 'session_id');
+    }
 }

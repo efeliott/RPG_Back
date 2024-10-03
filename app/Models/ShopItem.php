@@ -9,6 +9,8 @@ class ShopItem extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'item_id';
+
     protected $table = 'shopitems';
 
     protected $fillable = ['shop_id', 'item_id', 'price'];
