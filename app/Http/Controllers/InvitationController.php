@@ -31,7 +31,7 @@ class InvitationController extends Controller
         $invitation->accepted = false;
         $invitation->save();
     
-        $link = "http://localhost:3000/join-session/{$invitationToken}";
+        $link = "http://localhost:5173/join-session/{$invitationToken}";
     
         Mail::to($email)->send(new InvitePlayerToSession($session, $link));
     

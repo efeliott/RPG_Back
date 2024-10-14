@@ -62,8 +62,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/quests/{id}', [QuestController::class, 'destroy']);
 
     // Routes pour les invitations et les sessions
+    Route::post('/sessions', [SessionController::class, 'store']);
     Route::post('/sessions/{sessionToken}/invite', [InvitationController::class, 'invite']);
-    Route::post('/sessions/join', [SessionController::class, 'joinSession']);
+    Route::post('/join-session', [SessionController::class, 'joinSession']);
     Route::get('/session/{sessionToken}', [SessionController::class, 'show']);
     Route::get('/sessions/user', [SessionController::class, 'getUserSessions']);
     Route::delete('/sessions/{sessionToken}', [SessionController::class, 'destroy']);
