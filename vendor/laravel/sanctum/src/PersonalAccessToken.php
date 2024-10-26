@@ -8,7 +8,7 @@ use Laravel\Sanctum\Contracts\HasAbilities;
 class PersonalAccessToken extends Model implements HasAbilities
 {
     /**
-     * Les attributs qui doivent être castés vers des types natifs.
+     * The attributes that should be cast to native types.
      *
      * @var array
      */
@@ -19,21 +19,19 @@ class PersonalAccessToken extends Model implements HasAbilities
     ];
 
     /**
-     * Les attributs pouvant être assignés en masse.
+     * The attributes that are mass assignable.
      *
      * @var array
      */
     protected $fillable = [
         'name',
         'token',
-        'tokenable_id',
-        'tokenable_type',
         'abilities',
         'expires_at',
     ];
 
     /**
-     * Les attributs à cacher lors de la sérialisation.
+     * The attributes that should be hidden for serialization.
      *
      * @var array
      */
@@ -42,7 +40,7 @@ class PersonalAccessToken extends Model implements HasAbilities
     ];
 
     /**
-     * Obtenir le modèle associé auquel le token appartient.
+     * Get the tokenable model that the access token belongs to.
      *
      * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
@@ -52,7 +50,7 @@ class PersonalAccessToken extends Model implements HasAbilities
     }
 
     /**
-     * Rechercher l'instance de token correspondant au token donné.
+     * Find the token instance matching the given token.
      *
      * @param  string  $token
      * @return static|null
@@ -68,12 +66,10 @@ class PersonalAccessToken extends Model implements HasAbilities
         if ($instance = static::find($id)) {
             return hash_equals($instance->token, hash('sha256', $token)) ? $instance : null;
         }
-
-        return null; // Assure de retourner explicitement `null` si aucune correspondance n'est trouvée.
     }
 
     /**
-     * Vérifier si le token possède une capacité donnée.
+     * Determine if the token has a given ability.
      *
      * @param  string  $ability
      * @return bool
@@ -85,7 +81,7 @@ class PersonalAccessToken extends Model implements HasAbilities
     }
 
     /**
-     * Vérifier si le token n'a pas une capacité donnée.
+     * Determine if the token is missing a given ability.
      *
      * @param  string  $ability
      * @return bool

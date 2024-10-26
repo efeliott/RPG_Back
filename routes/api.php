@@ -15,6 +15,14 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ShopItemController;
 
+Route::options('/{any}', function () {
+    return response()->json([], 200)
+        ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
+        ->header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT, DELETE')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        ->header('Access-Control-Allow-Credentials', 'true');
+})->where('any', '.*');
+
 // Routes publiques (ex: accès à certaines ressources publiques)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -23,6 +31,9 @@ Route::post('/users', [UserController::class, 'store']);
 //Route::get('/sessions/user', [SessionController::class, 'getUserSessions']);
 Route::get('/sessions/user', [SessionController::class, 'getUserSessions'])->middleware('auth:sanctum');
 
+Route::get('/test', function () {
+    return ['message' => 'API working'];
+});
 
 // Routes nécessitant l'authentification
 Route::middleware(['auth:sanctum'])->group(function () {

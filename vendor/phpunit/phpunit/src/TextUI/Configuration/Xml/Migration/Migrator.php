@@ -14,6 +14,8 @@ use PHPUnit\Util\Xml\Loader as XmlLoader;
 use PHPUnit\Util\Xml\XmlException;
 
 /**
+ * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
+ *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class Migrator
@@ -29,7 +31,7 @@ final class Migrator
         $origin = (new SchemaDetector)->detect($filename);
 
         if (!$origin->detected()) {
-            throw new Exception('The file does not validate against any know schema');
+            throw new Exception('The file does not validate against any known schema');
         }
 
         if ($origin->version() === Version::series()) {

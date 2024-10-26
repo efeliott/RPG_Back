@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  laravel_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_app
+    ports:
+      - "8080:80"  # Mappe le port 80 du conteneur au port 8080 de ta machine
+    volumes:
+      - .:/var/www
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=193.203.168.105
+      - DB_PORT=3306
+      - DB_DATABASE=u206274438_rpg_bdd
+      - DB_USERNAME=u206274438_admin
+      - DB_PASSWORD=pandoraEl8!bddcda
+    networks:
+      - laravel_net
+
+networks:
+  laravel_net:
+    driver: bridge
