@@ -1,4 +1,4 @@
-# Utilise l'image officielle PHP avec Apache et spécifie la version de PHP (ajuste selon la version Laravel/PHP utilisée)
+# Utilise l'image officielle PHP avec Apache et spécifie la version de PHP
 FROM php:8.3-apache
 
 # Installation des dépendances système
@@ -28,6 +28,10 @@ WORKDIR /var/www
 
 # Copier le code source Laravel dans le conteneur
 COPY . /var/www
+
+# Configurer Apache pour pointer vers le répertoire public de Laravel
+RUN sed -i 's|/var/www/html|/var/www/public|g' /etc/apache2/sites-available/000-default.conf
+RUN sed -i 's|/var/www/html|/var/www/public|g' /etc/apache2/apache2.conf
 
 # Donner les permissions nécessaires aux dossiers de stockage et de cache
 RUN chown -R www-data:www-data /var/www \
