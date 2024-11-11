@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Service Laravel
   laravel_app:
     build:
       context: .
@@ -13,11 +14,11 @@ services:
       - laravel_net
     environment:
       - DB_CONNECTION=mysql
-      - DB_HOST=adresse_ip_base_de_donnees
+      - DB_HOST=adresse_ip_bdd_hostinger
       - DB_PORT=3306
-      - DB_DATABASE=nom_base
-      - DB_USERNAME=utilisateur_base
-      - DB_PASSWORD=mot_de_passe_base
+      - DB_DATABASE=nom_de_la_base
+      - DB_USERNAME=nom_utilisateur
+      - DB_PASSWORD=mot_de_passe
       - REDIS_HOST=redis
       - CACHE_DRIVER=redis
       - SESSION_DRIVER=redis
@@ -25,11 +26,12 @@ services:
     depends_on:
       - redis
 
+  # Service Nginx
   nginx:
     image: nginx:alpine
     container_name: nginx
     ports:
-      - "8080:80"  # Mappe le port 80 du conteneur au port 8080 du serveur
+      - "8080:80"  # Mappe le port 80 du conteneur au port 8080 du VPS
     volumes:
       - .:/var/www
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
@@ -38,6 +40,7 @@ services:
     networks:
       - laravel_net
 
+  # Service Redis
   redis:
     image: redis:alpine
     container_name: redis
