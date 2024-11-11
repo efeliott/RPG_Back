@@ -24,6 +24,11 @@ Route::options('/{any}', function () {
         ->header('Access-Control-Allow-Credentials', 'true');
 })->where('any', '.*');
 
+Route::post('/debug', function () {
+    return response()->json(['message' => 'Debug route reached'], 200);
+});
+
+
 // Routes publiques (ex: accès à certaines ressources publiques)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
