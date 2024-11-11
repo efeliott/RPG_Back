@@ -1,8 +1,7 @@
 version: '3.8'
 
 services:
-  # Service Laravel
-  laravel_app:  # Garder le nom "laravel_app" ici
+  laravel_app:
     build:
       context: .
       dockerfile: Dockerfile
@@ -14,11 +13,11 @@ services:
       - laravel_net
     environment:
       - DB_CONNECTION=mysql
-      - DB_HOST=193.203.168.105
+      - DB_HOST=adresse_ip_base_de_donnees
       - DB_PORT=3306
-      - DB_DATABASE=u206274438_rpg_bdd
-      - DB_USERNAME=u206274438_admin
-      - DB_PASSWORD=pandoraEl8!bddcda
+      - DB_DATABASE=nom_base
+      - DB_USERNAME=utilisateur_base
+      - DB_PASSWORD=mot_de_passe_base
       - REDIS_HOST=redis
       - CACHE_DRIVER=redis
       - SESSION_DRIVER=redis
@@ -26,21 +25,19 @@ services:
     depends_on:
       - redis
 
-  # Service Nginx
   nginx:
     image: nginx:alpine
     container_name: nginx
     ports:
-      - "8080:80"
+      - "8080:80"  # Mappe le port 80 du conteneur au port 8080 du serveur
     volumes:
       - .:/var/www
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - laravel_app  # S'assurer que le nom est "laravel_app"
+      - laravel_app
     networks:
       - laravel_net
 
-  # Service Redis
   redis:
     image: redis:alpine
     container_name: redis
