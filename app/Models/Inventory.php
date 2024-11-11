@@ -30,7 +30,7 @@ class Inventory extends Model
     /**
      * Obtient le personnage associé à cet inventaire.
      */
-    public function character()
+    public function character(): BelongsTo
     {
         return $this->belongsTo(Character::class, 'character_id', 'character_id');
     }

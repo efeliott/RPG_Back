@@ -2,18 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-class SessionUser extends Pivot
+class SessionUser extends Model
 {
+    use HasFactory;
+
     protected $table = 'session_user';
 
-    // Ajouter les colonnes dates de création et de mise à jour
     protected $fillable = [
         'session_id',
         'user_id',
+        'created_at',
+        'updated_at',
     ];
 
-    // Indiquer que la table utilise les timestamps
     public $timestamps = true;
 }

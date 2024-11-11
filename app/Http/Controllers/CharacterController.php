@@ -5,83 +5,86 @@ namespace App\Http\Controllers;
 use App\Models\Character;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Wallet;
+use App\Models\Inventory;
+use Illuminate\Support\Facades\Log;
 
 class CharacterController extends Controller
 {
-    /**
-     * Affiche la liste de tous les personnages.
-     */
-    public function index()
+    // Visualiser les personnages d'une session
+    public function getCharacters($sessionId)
     {
-        $characters = Character::all();
+        $characters = Character::where('session_id', $sessionId)->get();
         return response()->json($characters);
     }
 
-    /**
-     * Affiche un personnage spécifique.
-     */
-    public function show($id)
+    // Créer un personnage
+    public function createCharacter(Request $request, $sessionId)
     {
-        $character = Character::find($id);
-        if (!$character) {
-            return response()->json(['message' => 'Character not found'], 404);
-        }
-        return response()->json($character);
-    }
+        $session_id = $sessionId;
 
-    /**
-     * Crée un nouveau personnage.
-     */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'class' => 'required|string|max:255',
-            'abilities' => 'required'
+        $request->validate([
+            'name' => 'required|string',
+            'class' => 'required|string',
+            'abilities' => 'nullable|string',
+            'user_id' => 'required|exists:users,id',
+        ]);
+    
+        // Vérifie si l'utilisateur a déjà un personnage dans cette session
+        $existingCharacter = Character::where('session_id', $session_id)
+                                      ->where('user_id', $request->user_id)
+                                      ->first();
+    
+        if ($existingCharacter) {
+            return response()->json(['message' => 'User already has a character in this session'], 400);
+        }
+    
+        // Crée le personnage
+        $character = Character::create([
+            'name' => $request->name,
+            'class' => $request->class,
+            'abilities' => $request->abilities,
+            'session_id' => $session_id,
+            'user_id' => $request->user_id,
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+        if ($character->character_id) {
+            Log::info('Character ID generated:', ['character_id' => $character->character_id]);
+        } else {
+            Log::error('Failed to generate character ID');
         }
-
-        $character = Character::create($request->all());
+    
+        // Crée un wallet pour le personnage
+        Wallet::create([
+            'user_id' => $request->user_id,
+            'session_id' => $session_id,
+            'character_id' => $character->character_id,
+        ]);       
+    
         return response()->json($character, 201);
     }
 
-    /**
-     * Met à jour un personnage existant.
-     */
-    public function update(Request $request, $id)
+    // Met à jour un personnage existant
+    public function updateCharacter(Request $request, $characterId)
     {
-        $character = Character::find($id);
-        if (!$character) {
-            return response()->json(['message' => 'Character not found'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'string|max:255',
-            'class' => 'string|max:255',
-            'abilities' => 'required'
+        $request->validate([
+            'name' => 'required|string',
+            'class' => 'required|string',
+            'abilities' => 'nullable|string',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
-
+        $character = Character::findOrFail($characterId);
         $character->update($request->all());
-        return response()->json($character);
+
+        return response()->json(['message' => 'Character updated successfully.']);
     }
 
-    /**
-     * Supprime un personnage.
-     */
-    public function destroy($id)
+    // Supprime un personnage
+    public function deleteCharacter($characterId)
     {
-        $character = Character::find($id);
-        if (!$character) {
-            return response()->json(['message' => 'Character not found'], 404);
-        }
+        $character = Character::findOrFail($characterId);
         $character->delete();
-        return response()->json(['message' => 'Character deleted successfully']);
+
+        return response()->json(['message' => 'Character deleted successfully.']);
     }
 }

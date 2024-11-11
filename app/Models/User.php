@@ -7,15 +7,17 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
     protected $fillable = [
-        'username',
+        'name',
         'email',
         'password',
+        'role',
     ];
 
     protected $hidden = [
@@ -40,5 +42,11 @@ class User extends Authenticatable
     public function players()
     {
         return $this->hasMany(Player::class);
+    }
+
+    // Relation avec les personnages
+    public function characters(): HasMany
+    {
+        return $this->hasMany(Character::class, 'user_id', 'id');
     }
 }

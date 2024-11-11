@@ -14,6 +14,7 @@ use App\Http\Controllers\QuestController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ShopItemController;
+use App\Http\Controllers\SessionManagementController;
 
 Route::options('/{any}', function () {
     return response()->json([], 200)
@@ -46,6 +47,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return $request->user();
     });
 
+    Route::get('/game-master/{session_id}', [SessionController::class, 'showSessionDetails']);
+
     // Routes pour les ressources
     Route::apiResource('users', UserController::class)->except(['store']);
     Route::apiResource('players', PlayerController::class);
@@ -57,20 +60,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('quests', QuestController::class);
     Route::apiResource('transactions', TransactionController::class);
 
+    Route::middleware('auth:sanctum')->get('/user', [UserController::class, 'getUser']);
+
     // Routes pour les items de la boutique
-    Route::get('/sessions/{token}/shop-items', [ShopItemController::class, 'index']);
-    Route::post('/sessions/{token}/shop-items', [ShopItemController::class, 'store']);
-    Route::get('/shop-items/{id}', [ShopItemController::class, 'show']);
-    Route::put('/shop-items/{id}', [ShopItemController::class, 'update']);
-    Route::delete('/shop-items/{id}', [ShopItemController::class, 'destroy']);
+    Route::post('/items', [ItemController::class, 'createItemWithoutShop']);
+
+    // Routes pour les inventaires
+    Route::get('/characters/{characterId}/inventory', [InventoryController::class, 'getInventory']);
+    Route::delete('/inventory/{inventoryId}', [InventoryController::class, 'deleteInventoryItem']);
 
     // Routes pour les quêtes
-    Route::get('/sessions/{token}/quests', [QuestController::class, 'index']);
-    Route::get('/quests/{id}', [QuestController::class, 'show']);
-    Route::post('/sessions/{token}/quests', [QuestController::class, 'store']);
-    Route::put('/quests/{id}', [QuestController::class, 'update']);
-    Route::put('/quests/{id}/status', [QuestController::class, 'updateStatus']);
-    Route::delete('/quests/{id}', [QuestController::class, 'destroy']);
+    Route::prefix('quests')->group(function () {
+        Route::get('/{sessionId}/quests', [QuestController::class, 'getQuests']); // Récupérer toutes les quêtes d'une session
+        Route::post('/', [QuestController::class, 'store']); // Créer une quête
+        Route::put('/{questId}', [QuestController::class, 'update']); // Modifier une quête
+        Route::delete('/{questId}', [QuestController::class, 'destroy']); // Supprimer une quête
+        Route::post('/{questId}/assign', [QuestController::class, 'assignToPlayer']); // Attribuer à un joueur
+        Route::post('/{questId}/select/{playerId}', [QuestController::class, 'selectQuest']); // Joueur choisit une quête
+    });
 
     // Routes pour les invitations et les sessions
     Route::post('/sessions', [SessionController::class, 'store']);
@@ -85,16 +92,37 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/profile', [UserController::class, 'updateProfile']);
 
     // Routes pour les joueurs
-    Route::get('/sessions/{sessionToken}/players', [PlayerController::class, 'index']);
-    Route::post('/sessions/{sessionToken}/players', [PlayerController::class, 'store']);
-    Route::put('/players/{id}', [PlayerController::class, 'update']);
-    Route::delete('/players/{id}', [PlayerController::class, 'destroy']);
+    
 
     // Routes pour les personnages
-    Route::get('/characters', [CharacterController::class, 'index']);
-    Route::post('/characters', [CharacterController::class, 'store']);
+    
 
     // Routes pour le wallet
-    Route::post('/sessions/{token}/shop-items/{itemId}/purchase', [ShopItemController::class, 'purchase']);
-    Route::get('/sessions/{token}/wallet', [ShopItemController::class, 'getBalance']);
+    
+
+    // Routes pour le management de session
+    Route::prefix('session-management')->group(function () {
+        // Gestion des personnages
+        Route::get('/{sessionId}/characters', [CharacterController::class, 'getCharacters']);
+        Route::post('/{sessionId}/character', [CharacterController::class, 'createCharacter']);
+        Route::delete('/character/{characterId}', [CharacterController::class, 'deleteCharacter']);
+        Route::put('/character/{characterId}', [CharacterController::class, 'updateCharacter']);
+        // Gestion des inventaires
+        Route::post('/characters/{characterId}/inventory', [ItemController::class, 'addItemToInventory']);
+        Route::get('/character/{characterId}/inventory', [SessionManagementController::class, 'getInventory']);
+        Route::get('/sessions/{session_id}/users-without-character', [SessionController::class, 'getUsersWithoutCharacter']);
+        // Gestions des wallets
+        Route::get('/{sessionId}/wallets', [SessionManagementController::class, 'getWallets']);
+        Route::put('/{sessionId}/user/{userId}/wallet', [SessionManagementController::class, 'addMoneyToWallet']);
+        Route::put('/wallet/{walletId}', [SessionManagementController::class, 'updateWallet']);
+        // Gestion des items de la boutique
+        Route::get('/{sessionId}/shop-items', [SessionManagementController::class, 'getShopItems']);
+        Route::post('/{sessionId}/shop-items', [SessionManagementController::class, 'addItemToShop']);
+        Route::delete('/shop-item/{shopId}/{itemId}', [SessionManagementController::class, 'removeItemFromShop']);
+        // Gestion du shop
+        Route::get('/{sessionId}/shop/items', [ShopController::class, 'getShopItems']);
+        Route::post('/{sessionId}/shop/add-item', [ShopController::class, 'addItemToShop']);
+        Route::delete('/{sessionId}/shop/items/{itemId}', [ShopController::class, 'deleteItemFromShop']);
+        Route::put('/{sessionId}/shop/items/{itemId}', [ShopController::class, 'updateItemInShop']);
+    });
 });

@@ -5,79 +5,94 @@ namespace App\Http\Controllers;
 use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\ShopItem;
+use App\Models\Item;
 
 class ShopController extends Controller
 {
-    /**
-     * Affiche la liste de tous les magasins.
-     */
-    public function index()
+    // Récupère tous les items du shop pour une session
+    public function getShopItems($sessionId)
     {
-        $shops = Shop::with(['session', 'items'])->get();
-        return response()->json($shops);
+        $shop = Shop::firstOrCreate(['session_id' => $sessionId]);
+        $shopItems = ShopItem::where('shop_id', $shop->shop_id)
+                            ->with('item')
+                            ->get();
+
+        return response()->json($shopItems);
     }
 
-    /**
-     * Affiche un magasin spécifique.
-     */
-    public function show($id)
+    // Ajoute un nouvel item au shop avec un prix spécifique
+    public function addItemToShop(Request $request, $sessionId)
     {
-        $shop = Shop::with(['session', 'items'])->find($id);
-        if (!$shop) {
-            return response()->json(['message' => 'Shop not found'], 404);
-        }
-        return response()->json($shop);
-    }
-
-    /**
-     * Crée un nouveau magasin.
-     */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'session_id' => 'required|exists:sessions,session_id'
+        $request->validate([
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'img_url' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
+        // Vérifie ou crée le shop pour la session
+        $shop = Shop::firstOrCreate(['session_id' => $sessionId]);
 
-        $shop = Shop::create($request->all());
-        return response()->json($shop, 201);
-    }
-
-    /**
-     * Met à jour un magasin existant.
-     */
-    public function update(Request $request, $id)
-    {
-        $shop = Shop::find($id);
-        if (!$shop) {
-            return response()->json(['message' => 'Shop not found'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'session_id' => 'exists:sessions,session_id'
+        // Crée l'item
+        $item = Item::create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'img_url' => $request->img_url,
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
+        // Ajoute l'item au shop avec le prix défini
+        ShopItem::create([
+            'shop_id' => $shop->shop_id,
+            'item_id' => $item->item_id,
+            'price' => $request->price,
+        ]);
 
-        $shop->update($request->only(['session_id']));
-        return response()->json($shop);
+        return response()->json(['message' => 'Item added to shop successfully.']);
     }
 
-    /**
-     * Supprime un magasin.
-     */
-    public function destroy($id)
+    // Supprime un item du shop
+    public function deleteItemFromShop($sessionId, $itemId)
     {
-        $shop = Shop::find($id);
-        if (!$shop) {
-            return response()->json(['message' => 'Shop not found'], 404);
+        $shop = Shop::where('session_id', $sessionId)->first();
+
+        if ($shop) {
+            ShopItem::where('shop_id', $shop->shop_id)
+                    ->where('item_id', $itemId)
+                    ->delete();
+            return response()->json(['message' => 'Item removed from shop successfully.']);
         }
-        $shop->delete();
-        return response()->json(['message' => 'Shop deleted successfully']);
+
+        return response()->json(['message' => 'Shop or item not found.'], 404);
+    }
+
+    // Met à jour un item dans le shop
+    public function updateItemInShop(Request $request, $sessionId, $itemId)
+    {
+        $shop = Shop::where('session_id', $sessionId)->first();
+        $request->validate([
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'img_url' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+        ]);
+
+        if ($shop) {
+            // Mise à jour de l'item
+            Item::where('item_id', $itemId)->update([
+                'title' => $request->title,
+                'description' => $request->description,
+                'img_url' => $request->img_url,
+            ]);
+
+            // Mise à jour du prix dans ShopItem
+            ShopItem::where('shop_id', $shop->shop_id)
+                    ->where('item_id', $itemId)
+                    ->update(['price' => $request->price]);
+
+            return response()->json(['message' => 'Item updated successfully.']);
+        }
+
+        return response()->json(['message' => 'Shop or item not found.'], 404);
     }
 }

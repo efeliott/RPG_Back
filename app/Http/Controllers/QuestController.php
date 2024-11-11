@@ -9,97 +9,87 @@ use App\Models\Session;
 
 class QuestController extends Controller
 {
-    /**
-     * Affiche la liste de toutes les quêtes.
-     */
-    public function index($token)
+    // Récupère toutes les quêtes d'une session
+    public function store(Request $request)
     {
-        $session = Session::where('token', $token)->firstOrFail();
-        $quests = $session->quests;
-        return response()->json($quests);
-    }
-
-    /**
-     * Affiche une quête spécifique.
-     */
-    public function show($id)
-    {
-        $quest = Quest::with('session')->find($id);
-        if (!$quest) {
-            return response()->json(['message' => 'Quest not found'], 404);
-        }
-        return response()->json($quest);
-    }
-
-    /**
-     * Crée une nouvelle quête.
-     */
-    public function store(Request $request, $token)
-    {
-        // Récupérer la session à partir du token
-        $session = Session::where('token', $token)->firstOrFail();
-
-        // Valider les données de la requête
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'reward' => 'required|integer',
+            'session_id' => 'required|exists:sessions,session_id',
+            'reward' => 'nullable|integer',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
-
-        // Créer et sauvegarder la nouvelle quête
-        $quest = new Quest([
-            'session_id' => $session->session_id, // Assurez-vous d'utiliser l'ID de la session récupérée
-            'title' => $request->title,
-            'description' => $request->description,
-            'reward' => $request->reward,
+        $quest = Quest::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'session_id' => $validated['session_id'],
+            'reward' => $validated['reward'] ?? 0,
+            'is_finished' => false,
         ]);
-        $quest->save();
 
-        return response()->json(['message' => 'Quest added successfully!', 'quest' => $quest], 201);
+        return response()->json(['message' => 'Quest created successfully', 'quest' => $quest]);
     }
 
-    /**
-     * Met à jour une quête existante.
-     */
-    public function update(Request $request, $id)
+    // Met à jour une quête
+    public function update(Request $request, $questId)
     {
-        $quest = Quest::find($id);
-        if (!$quest) {
-            return response()->json(['message' => 'Quest not found'], 404);
-        }
+        $quest = Quest::findOrFail($questId);
 
-        $quest->update($request->all());
-        return response()->json($quest);
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'reward' => 'nullable|integer',
+            'is_finished' => 'boolean',
+        ]);
+
+        $quest->update($validated);
+
+        return response()->json(['message' => 'Quest updated successfully', 'quest' => $quest]);
     }
 
-    /**
-     * Met à jour le statut d'une quête.
-     */
-    public function updateStatus(Request $request, $id)
+    // Supprime une quête
+    public function destroy($questId)
     {
-        $quest = Quest::find($id);
-        if (!$quest) {
-            return response()->json(['message' => 'Quest not found'], 404);
-        }
-
-        $quest->is_finished = $request->is_finished;
-        $quest->save();
-
-        return response()->json($quest);
-    }
-
-    /**
-     * Supprime une quête.
-     */
-    public function destroy($id)
-    {
-        $quest = Quest::findOrFail($id);
+        $quest = Quest::where('quest_id', $questId)->firstOrFail();
         $quest->delete();
+    
+        return response()->json(['message' => 'Quest deleted successfully']);
+    }    
 
-        return response()->json(['message' => 'Quest removed successfully!']);
+    // Assigne la quête à un joueur
+    public function assignToPlayer(Request $request, $questId)
+    {
+        $validated = $request->validate([
+            'player_id' => 'required|exists:players,id',
+        ]);
+
+        $quest = Quest::findOrFail($questId);
+        $quest->player_id = $validated['player_id'];
+        $quest->save();
+
+        return response()->json(['message' => 'Quest assigned to player', 'quest' => $quest]);
+    }
+
+    // Selection d'une quête par un joueur
+    public function selectQuest($questId, $playerId)
+    {
+        $quest = Quest::where('quest_id', $questId)
+                    ->where('player_id', null)
+                    ->where('is_finished', false)
+                    ->firstOrFail();
+
+        $quest->player_id = $playerId;
+        $quest->save();
+
+        return response()->json(['message' => 'Quest selected by player', 'quest' => $quest]);
+    }
+
+    // Récupère toutes les quêtes d'une session
+    public function getQuests($session_id)
+    {
+        $session = Session::findOrFail($session_id);
+        $quests = $session->quests;
+
+        return response()->json($quests);
     }
 }

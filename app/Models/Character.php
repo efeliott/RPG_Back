@@ -10,6 +10,13 @@ class Character extends Model
     use HasFactory;
 
     /**
+     * Le nom de la clé primaire personnalisée du modèle.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'character_id';
+
+    /**
      * Le nom de la table associée au modèle.
      *
      * @var string
@@ -21,11 +28,7 @@ class Character extends Model
      *
      * @var array
      */
-    protected $fillable = [
-        'name',
-        'class',
-        'abilities'
-    ];
+    protected $fillable = ['name', 'class', 'abilities', 'session_id', 'user_id'];
 
     /**
      * Les attributs qui devraient être masqués pour les tableaux.
@@ -42,4 +45,20 @@ class Character extends Model
     protected $casts = [
         'abilities' => 'array', // Cast en array si stocké comme JSON.
     ];
+
+    /**
+     * Obtenir la session à laquelle appartient le personnage.
+     */
+    public function session()
+    {
+        return $this->belongsTo(Session::class, 'session_id');
+    }
+
+    /**
+     * Obtenir l'utilisateur propriétaire du personnage.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

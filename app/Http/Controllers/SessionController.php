@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use App\Models\Shop;
 use App\Models\Wallet;
 use App\Models\ShopItem;
+use App\Models\SessionUser;
 
 class SessionController extends Controller
 {
@@ -68,6 +69,9 @@ class SessionController extends Controller
     //     return response()->json($session);
     // }
 
+    /**
+     * Display the specified resource.
+     */
     public function show($token)
     {
         $session = Session::where('token', $token)->with('users')->firstOrFail();
@@ -136,63 +140,59 @@ class SessionController extends Controller
             \Log::error('Erreur lors de la suppression de la session : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la suppression de la session.'], 500);
         }
-    }
-    
-    
+    }    
 
     /**
      * Rejoindre une session
      */
     public function joinSession(Request $request)
     {
-        try {
-            Log::info('joinSession called');
-            $token = $request->input('session_token');
-            Log::info('Token received:', ['session_token' => $token]);
-
-            if (!Auth::check()) {
-                Log::warning('User not authenticated');
-                return response()->json(['message' => 'User not authenticated'], 401);
-            }
-
-            $invitation = Invitation::where('token', $token)->first();
-            Log::info('Invitation:', ['invitation' => $invitation]);
-
-            if ($invitation && !$invitation->accepted) {
-                $session = $invitation->session;
-                Log::info('Session:', ['session' => $session]);
-
-                $user = Auth::user();
-                Log::info('Authenticated user:', ['user' => $user]);
-
-                // Ajouter l'utilisateur à la session
-                $session->users()->attach($user->id, ['created_at' => now(), 'updated_at' => now()]);
-
-                // Créer un wallet avec un montant initial de 0 pour l'utilisateur dans cette session
-                $wallet = Wallet::create([
-                    'user_id' => $user->user_id,
-                    'session_id' => $session->session_id,
-                    'balance' => 0
-                ]);
-
-                $invitation->accepted = true;
-                $invitation->save();
-
-                Log::info('User joined session and wallet created successfully');
-                return response()->json([
-                    'message' => 'You have joined the session!',
-                    'session_id' => $session->id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-            } else {
-                Log::warning('Invalid or already used invitation token');
-                return response()->json(['message' => 'Invalid or already used invitation token'], 404);
-            }
-        } catch (\Exception $e) {
-            Log::error('Error in joinSession:', ['exception' => $e]);
-            return response()->json(['message' => 'Internal Server Error'], 500);
+        // Vérification de l'authentification de l'utilisateur
+        if (!Auth::check()) {
+            return response()->json(['message' => 'User not authenticated'], 401);
         }
+
+        $user = Auth::user();
+        $sessionToken = $request->input('session_token');
+
+        // Récupérer l'invitation via le token d'invitation
+        $invitation = Invitation::where('token', $sessionToken)->first();
+
+        if (!$invitation) {
+            return response()->json(['message' => 'Invalid or expired invitation token'], 404);
+        }
+
+        // Récupérer la session liée à cette invitation
+        $session = Session::find($invitation->session_id);
+
+        if (!$session || !$session->is_active) {
+            return response()->json(['message' => 'Session not found or inactive'], 404);
+        }
+
+        // Vérifier si l'utilisateur est déjà lié à la session
+        $isUserInSession = SessionUser::where('session_id', $session->session_id)
+                                    ->where('user_id', $user->id)
+                                    ->exists();
+
+        if ($isUserInSession) {
+            return response()->json(['message' => 'User already in session'], 400);
+        }
+
+        // Lier l'utilisateur à la session
+        SessionUser::create([
+            'session_id' => $session->session_id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Marquer l'invitation comme utilisée
+        $invitation->update(['accepted' => true]);
+
+        return response()->json([
+            'message' => 'You have successfully joined the session!',
+            'session_id' => $session->session_id,
+        ], 200);
     }
     
     /**
@@ -214,5 +214,35 @@ class SessionController extends Controller
             'game_master_sessions' => $gameMasterSessions,
             'invited_sessions' => $invitedSessions
         ]);
+    }
+
+    /**
+     * Show the details of a session.
+     */
+    public function showSessionDetails($session_id)
+    {
+        $session = Session::find($session_id);
+
+        if (!$session) {
+            return response()->json(['message' => 'Session not found'], 404);
+        }
+
+        return response()->json($session);
+    }
+
+    /**
+     * Get the users without a character in a session.
+     */
+    public function getUsersWithoutCharacter($session_id)
+    {
+        $session = Session::findOrFail($session_id);
+
+        $usersWithoutCharacter = $session->users()
+            ->whereDoesntHave('characters', function ($query) use ($session_id) {
+                $query->where('session_id', $session_id);
+            })
+            ->get();
+
+        return response()->json($usersWithoutCharacter);
     }
 }

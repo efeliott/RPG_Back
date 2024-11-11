@@ -9,7 +9,7 @@ class Quest extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'id'; // Clé primaire
+    protected $primaryKey = 'quest_id';
 
     protected $fillable = [
         'title', 'description', 'is_finished', 'session_id'

@@ -5,83 +5,38 @@ namespace App\Http\Controllers;
 use App\Models\Inventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Item;
+use App\Models\Character;
 
 class InventoryController extends Controller
 {
-    /**
-     * Affiche la liste de tous les inventaires.
-     */
-    public function index()
+    public function getInventory($characterId)
     {
-        $inventories = Inventory::with(['character', 'item'])->get();
-        return response()->json($inventories);
+        // Vérifie que le personnage existe
+        $character = Character::findOrFail($characterId);
+
+        // Récupère les items de l'inventaire du personnage avec les détails des items
+        $inventoryItems = Inventory::where('character_id', $characterId)
+                                    ->with(['item' => function($query) {
+                                        $query->select('item_id', 'title', 'description');
+                                    }])
+                                    ->get(['inventory_id', 'item_id', 'max_quantity', 'character_id']);
+
+        return response()->json($inventoryItems, 200);
     }
 
-    /**
-     * Affiche un inventaire spécifique.
-     */
-    public function show($id)
+    public function deleteInventoryItem($inventoryId)
     {
-        $inventory = Inventory::with(['character', 'item'])->find($id);
-        if (!$inventory) {
-            return response()->json(['message' => 'Inventory not found'], 404);
+        $inventoryItem = Inventory::where('inventory_id', $inventoryId);
+    
+        if (!$inventoryItem->exists()) {
+            return response()->json(['message' => 'Item introuvable dans l\'inventaire'], 404);
+        } else {
+            // Suppression de l'item trouvé
+            $inventoryItem->delete();
         }
-        return response()->json($inventory);
+    
+        return response()->json(['message' => 'Item supprimé de l\'inventaire'], 200);
     }
-
-    /**
-     * Crée un nouvel inventaire.
-     */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'character_id' => 'required|exists:characters,character_id',
-            'item_id' => 'required|exists:items,item_id',
-            'max_quantity' => 'required|integer'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
-
-        $inventory = Inventory::create($request->all());
-        return response()->json($inventory, 201);
-    }
-
-    /**
-     * Met à jour un inventaire existant.
-     */
-    public function update(Request $request, $id)
-    {
-        $inventory = Inventory::find($id);
-        if (!$inventory) {
-            return response()->json(['message' => 'Inventory not found'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'character_id' => 'exists:characters,character_id',
-            'item_id' => 'exists:items,item_id',
-            'max_quantity' => 'integer'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
-
-        $inventory->update($request->all());
-        return response()->json($inventory);
-    }
-
-    /**
-     * Supprime un inventaire.
-     */
-    public function destroy($id)
-    {
-        $inventory = Inventory::find($id);
-        if (!$inventory) {
-            return response()->json(['message' => 'Inventory not found'], 404);
-        }
-        $inventory->delete();
-        return response()->json(['message' => 'Inventory deleted successfully']);
-    }
+      
 }

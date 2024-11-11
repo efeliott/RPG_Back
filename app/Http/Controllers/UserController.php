@@ -97,4 +97,17 @@ class UserController extends Controller
             'invited_sessions' => $invitedSessions
         ]);
     }
+
+    /**
+     * Get the user's information.
+     */
+    public function getUser(Request $request)
+    {
+        $user = Auth::user();
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->username,
+            'role' => $user->role,
+        ]);
+    }
 }
