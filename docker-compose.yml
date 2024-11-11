@@ -2,14 +2,14 @@ version: '3.8'
 
 services:
   # Service Laravel
-  app:
+  laravel_app:  # Garder le nom "laravel_app" ici
     build:
       context: .
       dockerfile: Dockerfile
     container_name: laravel_app
     volumes:
       - .:/var/www
-      - ./storage:/var/www/storage # Persistance des fichiers de stockage
+      - ./storage:/var/www/storage
     networks:
       - laravel_net
     environment:
@@ -31,12 +31,12 @@ services:
     image: nginx:alpine
     container_name: nginx
     ports:
-      - "8080:80"  # Mappe le port 80 du conteneur au port 8080 de la machine
+      - "8080:80"
     volumes:
       - .:/var/www
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf # Configuration personnalisée de Nginx
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - laravel_app
+      - laravel_app  # S'assurer que le nom est "laravel_app"
     networks:
       - laravel_net
 
