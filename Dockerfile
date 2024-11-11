@@ -1,50 +1,41 @@
+# Utilise l'image officielle PHP avec Apache et spécifie la version de PHP (ajuste selon la version Laravel/PHP utilisée)
 FROM php:8.3-apache
 
-ARG WWW_USER=1000
-
-WORKDIR /app
-
+# Installation des dépendances système
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
-    libpq-dev \
-    libzip-dev \
-    libcurl4-openssl-dev \
     zip \
     unzip \
-    default-mysql-client
+    curl \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd mbstring xml pdo_mysql
 
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip curl intl
+# Installer Redis via PECL et activer l'extension
+RUN pecl install redis && docker-php-ext-enable redis
 
-COPY vhost.conf /etc/apache2/sites-available/000-default.conf
-COPY server-name.conf /etc/apache2/conf-available/
+# Activer mod_rewrite pour Laravel
+RUN a2enmod rewrite
 
-RUN a2enmod rewrite && a2enconf server-name
+# Installation de Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-RUN php -r "readfile('http://getcomposer.org/installer');" | php -- --install-dir=/usr/bin/ --filename=composer
+# Définir le répertoire de travail
+WORKDIR /var/www
 
-RUN groupadd --force -g $WWW_USER webapp
-RUN useradd -ms /bin/bash --no-user-group -g $WWW_USER -u $WWW_USER webapp
+# Copier le code source Laravel dans le conteneur
+COPY . /var/www
 
-COPY . /app
+# Donner les permissions nécessaires aux dossiers de stockage et de cache
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage \
+    && chmod -R 755 /var/www/bootstrap/cache
 
-# Définir les permissions pour storage et bootstrap/cache
-RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
-    && chmod -R 775 /app/storage /app/bootstrap/cache
+# Exposer le port 80 pour Apache
+EXPOSE 80
 
-RUN composer install --no-dev --optimize-autoloader
-RUN chown -R webapp:webapp /app
-
-RUN apt-get -y autoremove \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-USER ${WWW_USER}
-
-CMD ["bash", "-c", "php artisan migrate --force && php artisan key:generate && apache2-foreground"]
+# Commande de démarrage d'Apache
+CMD ["apache2-foreground"]
