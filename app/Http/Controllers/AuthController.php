@@ -21,23 +21,25 @@ class AuthController extends Controller
         // Validation des données du formulaire
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:255|unique:users',
+            'name' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
             'password_confirmation' => 'required',
         ]);
-    
+
         // Si la validation échoue
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-    
+
         // Création de l'utilisateur
         $user = User::create([
             'username' => $request->username,
+            'name' => $request->name, // Ajout du champ 'name'
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-    
+
         // Générer un token d'authentification
         $token = $user->createToken('RPGToken')->plainTextToken;
 
@@ -47,10 +49,11 @@ class AuthController extends Controller
             'User Registered', 
             'L\'utilisateur a créé un compte avec l\'email: ' . $user->email
         );
-    
+
         // Réponse JSON avec le message de succès et le token
         return response()->json(['message' => 'User registered successfully', 'token' => $token], 201);
     }
+
 
     // Méthode de connexion
     public function login(Request $request)

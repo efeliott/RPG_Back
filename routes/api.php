@@ -52,7 +52,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return $request->user();
     });
 
-    Route::get('/game-master/{session_id}', [SessionController::class, 'showSessionDetails']);
+    Route::get('/game-master/{sessionToken}', [SessionController::class, 'showSessionDetails']);
 
     // Routes pour les ressources
     Route::apiResource('users', UserController::class)->except(['store']);
@@ -82,6 +82,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{questId}', [QuestController::class, 'destroy']); // Supprimer une quête
         Route::post('/{questId}/assign', [QuestController::class, 'assignToPlayer']); // Attribuer à un joueur
         Route::post('/{questId}/select/{playerId}', [QuestController::class, 'selectQuest']); // Joueur choisit une quête
+        Route::post('/{questId}/complete', [QuestController::class, 'markAsComplete']);
+    });
+
+    // Routes pour la gestions de sactifsctions palyer
+    Route::prefix('player')->group(function () {
+        // Routes pour la gestion de l'inventaire du joueur
+        Route::get('/{sessionId}/inventory/{characterId}', [InventoryController::class, 'getPlayerInventory']);
+        Route::get('/inventory/item/{inventoryId}', [InventoryController::class, 'getItemDetail']);
+        Route::get('/{sessionId}/character', [PlayerController::class, 'getCharacterForSession']);
+        Route::get('{sessionId}/wallet/{characterId}', [PlayerController::class, 'getWalletBalance']);
+        Route::get('{sessionId}/shop', [PlayerController::class, 'getShopItems']);
+        Route::get('{sessionId}/quests/{characterId}', [PlayerController::class, 'getAvailableQuests']);
+        Route::post('/shop/{sessionId}/purchase/{itemId}/{characterId}', [ShopController::class, 'purchaseItem']);
+        Route::post('/{sessionId}/quests/{questId}/accept/{characterId}', [QuestController::class, 'acceptQuest']);
     });
 
     // Routes pour les invitations et les sessions
@@ -95,16 +109,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Routes pour les profils
     Route::get('/profile', [UserController::class, 'showProfile']);
     Route::put('/profile', [UserController::class, 'updateProfile']);
-
-    // Routes pour les joueurs
-    
-
-    // Routes pour les personnages
-    
-
-    // Routes pour le wallet
-    
-
+  
     // Routes pour le management de session
     Route::prefix('session-management')->group(function () {
         // Gestion des personnages

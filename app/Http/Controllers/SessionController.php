@@ -219,13 +219,9 @@ class SessionController extends Controller
     /**
      * Show the details of a session.
      */
-    public function showSessionDetails($session_id)
+    public function showSessionDetails($sessionToken)
     {
-        $session = Session::find($session_id);
-
-        if (!$session) {
-            return response()->json(['message' => 'Session not found'], 404);
-        }
+        $session = Session::where('token', $sessionToken)->with('users')->firstOrFail();
 
         return response()->json($session);
     }

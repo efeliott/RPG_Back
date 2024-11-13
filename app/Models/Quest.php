@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Quest extends Model
 {
@@ -12,7 +13,7 @@ class Quest extends Model
     protected $primaryKey = 'quest_id';
 
     protected $fillable = [
-        'title', 'description', 'is_finished', 'session_id'
+        'title', 'description', 'is_finished', 'session_id', 'reward', 'user_id', 'character_id'
     ];
 
     public function session()

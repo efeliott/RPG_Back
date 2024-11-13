@@ -6,6 +6,10 @@ use App\Models\Quest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Session;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Character;
+use Illuminate\Support\Facades\DB;
+use App\Models\Wallet;
 
 class QuestController extends Controller
 {
@@ -16,21 +20,21 @@ class QuestController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'session_id' => 'required|exists:sessions,session_id',
-            'reward' => 'nullable|integer',
+            'reward' => 'required|integer',
         ]);
 
         $quest = Quest::create([
             'title' => $validated['title'],
             'description' => $validated['description'],
             'session_id' => $validated['session_id'],
-            'reward' => $validated['reward'] ?? 0,
+            'reward' => $validated['reward'], // Supprimez le `?? 0`
             'is_finished' => false,
         ]);
 
-        return response()->json(['message' => 'Quest created successfully', 'quest' => $quest]);
+        return response()->json(['message' => 'Quest created successfully', 'quest' => $quest], 201);
     }
 
-    // Met à jour une quête
+
     public function update(Request $request, $questId)
     {
         $quest = Quest::findOrFail($questId);
@@ -42,10 +46,14 @@ class QuestController extends Controller
             'is_finished' => 'boolean',
         ]);
 
+        // Assure que 'reward' est bien défini, même si aucun n'est envoyé
+        $validated['reward'] = $validated['reward'] ?? $quest->reward;
+
         $quest->update($validated);
 
         return response()->json(['message' => 'Quest updated successfully', 'quest' => $quest]);
     }
+
 
     // Supprime une quête
     public function destroy($questId)
@@ -91,5 +99,76 @@ class QuestController extends Controller
         $quests = $session->quests;
 
         return response()->json($quests);
+    }
+
+    public function acceptQuest($sessionId, $questId, $characterId)
+    {
+        $userId = Auth::id();
+
+        // Vérifier si le personnage de l'utilisateur existe dans la session
+        $character = Character::where('session_id', $sessionId)
+                            ->where('user_id', $userId)
+                            ->first();
+
+        if (!$character) {
+            return response()->json(['message' => 'Character not found in this session'], 404);
+        }
+
+        // Trouver la quête
+        $quest = Quest::where('quest_id', $questId)
+                    ->where('session_id', $sessionId)
+                    ->first();
+
+        if (!$quest) {
+            return response()->json(['message' => 'Quest not found'], 404);
+        }
+
+        // Assigner la quête au personnage
+        $quest->character_id = $characterId;
+        $quest->save();
+
+        return response()->json(['message' => 'Quest accepted successfully', 'quest' => $quest]);
+    }
+
+    public function markAsComplete($questId)
+    {
+        // Récupérer la quête avec le character_id associé
+        $quest = Quest::where('quest_id', $questId)->where('is_finished', false)->first();
+
+        // Vérifier si la quête est valide et non terminée
+        if (!$quest || !$quest->character_id) {
+            return response()->json(['message' => 'Quête non trouvée ou déjà terminée.'], 404);
+        }
+
+        // Utiliser le character_id de la quête pour identifier le personnage
+        $characterId = $quest->character_id;
+
+        // Débuter une transaction pour assurer la mise à jour des données
+        DB::beginTransaction();
+
+        try {
+            // Récupérer ou créer le wallet du personnage
+            $wallet = Wallet::firstOrCreate(
+                ['character_id' => $characterId],
+                ['balance' => 0]
+            );
+
+            // Ajouter la récompense de la quête au solde du wallet
+            $wallet->balance += $quest->reward;
+            $wallet->save();
+
+            // Marquer la quête comme terminée
+            $quest->is_finished = true;
+            $quest->save();
+
+            // Valider la transaction
+            DB::commit();
+
+            return response()->json(['message' => 'Quête terminée et récompense ajoutée au porte-monnaie.'], 200);
+        } catch (\Exception $e) {
+            // Annuler la transaction en cas d'erreur
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur lors de la finalisation de la quête.'], 500);
+        }
     }
 }
