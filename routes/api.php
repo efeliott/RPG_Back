@@ -52,6 +52,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return $request->user();
     });
 
+    Route::get('/user', [UserController::class, 'show']);
+    Route::put('/user/profile', [UserController::class, 'updateProfile']);
+    Route::put('/user/password', [UserController::class, 'updatePassword']);
+
     Route::get('/game-master/{sessionToken}', [SessionController::class, 'showSessionDetails']);
 
     // Routes pour les ressources

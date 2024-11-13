@@ -166,5 +166,5 @@ class ShopController extends Controller
                 'balance' => $wallet->balance
             ]
         ], 200);
-    }    
+    }
 }

@@ -13,6 +13,61 @@ use App\Models\Session;
 class UserController extends Controller
 {
     /**
+     * Affiche les informations de l'utilisateur actuel.
+     */
+    public function show()
+    {
+        return response()->json(Auth::user());
+    }
+
+    /**
+     * Met à jour le profil de l'utilisateur.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'email' => 'required|email|unique:users,email,' . $user->id,
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user->update($request->only(['username', 'email']));
+
+        return response()->json(['message' => 'Profil mis à jour avec succès']);
+    }
+
+    /**
+     * Met à jour le mot de passe de l'utilisateur.
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required',
+            'new_password' => 'required|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['message' => 'Mot de passe actuel incorrect'], 403);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Mot de passe mis à jour avec succès']);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function showProfile()
@@ -41,30 +96,6 @@ class UserController extends Controller
         ]);
 
         return response()->json($user, 201);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function updateProfile(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email|unique:users,email,' . Auth::id(),
-            'password' => 'nullable|min:6',
-            'username' => 'required|string|max:255',
-        ]);
-
-        $user = Auth::user();
-        $user->email = $request->email;
-        $user->username = $request->username;
-
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
-        }
-
-        $user->save();
-
-        return response()->json(['message' => 'Profile updated successfully.']);
     }
 
     /**
